@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>控制台 - 远程关机管理系统</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--primary:#6366f1;--primary-dark:#4f46e5;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--bg:#f1f5f9;--card:#fff;--dark:#0f172a;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--border:#e2e8f0}
+        body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;background:var(--bg);min-height:100vh;color:var(--text)}
+        .icon{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .icon-sm{width:16px;height:16px}.icon-lg{width:24px;height:24px}
+        nav{background:var(--dark);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+        .brand{display:flex;align-items:center;gap:12px;color:#fff;font-weight:600;font-size:17px}
+        .brand-logo{width:38px;height:38px;background:linear-gradient(135deg,var(--primary),#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center}
+        .brand-logo .icon{stroke:#fff}
+        .nav-links{display:flex;gap:6px}
+        .nav-link{color:rgba(255,255,255,0.7);text-decoration:none;padding:10px 16px;border-radius:8px;font-size:14px;display:flex;align-items:center;gap:8px;transition:all 0.2s}
+        .nav-link:hover{color:#fff;background:rgba(255,255,255,0.1)}
+        .nav-link.active{color:#fff;background:rgba(99,102,241,0.5)}
+        .user-area{display:flex;align-items:center;gap:16px}
+        .user-info{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.85);font-size:14px}
+        .avatar{width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center}
+        .avatar .icon{stroke:#fff;width:18px;height:18px}
+        .logout{color:rgba(255,255,255,0.6);text-decoration:none;padding:8px 12px;border-radius:6px;font-size:14px;display:flex;align-items:center;gap:6px;transition:all 0.2s}
+        .logout:hover{color:#fff;background:rgba(239,68,68,0.2)}
+        .main{max-width:1400px;margin:0 auto;padding:28px 32px}
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px}
+        .stat{background:var(--card);border-radius:16px;padding:24px;border:1px solid var(--border);display:flex;align-items:center;gap:20px;transition:all 0.3s}
+        .stat:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+        .stat-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+        .stat-icon .icon{width:26px;height:26px;stroke:#fff}
+        .stat-icon.green{background:linear-gradient(135deg,#10b981,#34d399)}
+        .stat-icon.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+        .stat-icon.purple{background:linear-gradient(135deg,#8b5cf6,#a78bfa)}
+        .stat h3{font-size:13px;color:var(--text2);font-weight:500;margin-bottom:6px}
+        .stat .val{font-size:32px;font-weight:700}
+        .card{background:var(--card);border-radius:16px;border:1px solid var(--border);margin-bottom:24px;overflow:hidden}
+        .card-head{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#fafbfc}
+        .card-head h2{font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px}
+        .card-head h2 .icon{stroke:var(--primary)}
+        .card-body{padding:24px}
+        .btn{padding:10px 18px;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+        .btn .icon{width:16px;height:16px}
+        .btn-primary{background:var(--primary);color:#fff}
+        .btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,0.3)}
+        .btn-danger{background:var(--danger);color:#fff}
+        .btn-danger:hover{background:#dc2626}
+        .btn-warning{background:var(--warning);color:#fff}
+        .btn-warning:hover{background:#d97706}
+        .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+        .btn-ghost:hover{background:var(--bg)}
+        .btn-sm{padding:8px 14px;font-size:13px}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+        .client{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;transition:all 0.25s;position:relative}
+        .client:hover{border-color:var(--primary);box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+        .client.selected{border-color:var(--primary);background:linear-gradient(135deg,rgba(99,102,241,0.03),rgba(139,92,246,0.03))}
+        .client-cb{position:absolute;top:16px;left:16px}
+        .client-cb input{width:18px;height:18px;cursor:pointer;accent-color:var(--primary)}
+        .client-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-left:32px}
+        .client-name{font-weight:600;font-size:15px}
+        .status{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+        .status.on{background:rgba(16,185,129,0.1);color:var(--success)}
+        .status.on::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        .client-info{padding-left:32px;margin-bottom:16px}
+        .info-row{display:flex;align-items:center;gap:10px;color:var(--text2);font-size:13px;margin-bottom:8px}
+        .info-row:last-child{margin-bottom:0}
+        .info-row .icon{width:15px;height:15px;stroke:var(--text3)}
+        .client-btns{padding-left:32px;display:flex;gap:10px;flex-wrap:wrap}
+        .batch{background:linear-gradient(135deg,var(--primary),#7c3aed);border-radius:12px;padding:14px 20px;margin-bottom:18px;display:none;align-items:center;gap:16px;color:#fff}
+        .batch.show{display:flex}
+        .batch .btn{background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+        .batch .btn:hover{background:rgba(255,255,255,0.3)}
+        .empty{text-align:center;padding:60px 20px;grid-column:1/-1}
+        .empty-icon{width:72px;height:72px;background:var(--bg);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+        .empty-icon .icon{width:32px;height:32px;stroke:var(--text3)}
+        .empty p{color:var(--text2);font-size:15px}
+        .empty .hint{color:var(--text3);font-size:13px;margin-top:6px}
+        .tags{display:flex;gap:12px;flex-wrap:wrap}
+        .tag{background:var(--bg);border:1px solid var(--border);padding:12px 18px;border-radius:10px;display:flex;align-items:center;gap:12px;font-size:14px;transition:all 0.2s}
+        .tag:hover{border-color:var(--primary);background:rgba(99,102,241,0.04)}
+        .tag .icon{stroke:var(--primary)}
+        .tag .del{width:22px;height:22px;border-radius:6px;background:rgba(239,68,68,0.1);color:var(--danger);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+        .tag .del:hover{background:var(--danger);color:#fff}
+        .tag .del .icon{width:14px;height:14px;stroke:currentColor}
+        .modal-bg{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center}
+        .modal-bg.show{display:flex}
+        .modal{background:var(--card);border-radius:20px;padding:28px;width:100%;max-width:400px;box-shadow:0 25px 50px rgba(0,0,0,0.25);animation:modalIn 0.25s ease}
+        @keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        .modal-head{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+        .modal-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+        .modal-icon .icon{stroke:#fff;width:24px;height:24px}
+        .modal-icon.primary{background:linear-gradient(135deg,var(--primary),#8b5cf6)}
+        .modal-icon.danger{background:linear-gradient(135deg,var(--danger),#f87171)}
+        .modal-icon.warning{background:linear-gradient(135deg,var(--warning),#fbbf24)}
+        .modal-head h3{font-size:18px;font-weight:600}
+        .modal-body{color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:24px}
+        .form-group{margin-bottom:18px}
+        .form-group label{display:block;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px}
+        .form-group input{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);transition:all 0.2s}
+        .form-group input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1)}
+        .modal-btns{display:flex;gap:12px;justify-content:flex-end}
+        .toast{position:fixed;top:24px;right:24px;padding:14px 20px;border-radius:12px;color:#fff;font-size:14px;font-weight:500;z-index:2000;display:flex;align-items:center;gap:10px;animation:toastIn 0.3s ease;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
+        .toast .icon{width:18px;height:18px;stroke:#fff}
+        .toast.success{background:linear-gradient(135deg,#10b981,#34d399)}
+        .toast.error{background:linear-gradient(135deg,#ef4444,#f87171)}
+        .toast.info{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+        @keyframes toastIn{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+        @media(max-width:1024px){.stats{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
+        @media(max-width:768px){nav{padding:0 16px}.main{padding:20px 16px}.nav-links{display:none}}
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="brand">
+            <div class="brand-logo"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+            <span>远程关机管理系统</span>
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link active"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>控制台</a>
+            <a href="/logs" class="nav-link"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>操作日志</a>
+        </div>
+        <div class="user-area">
+            <div class="user-info">
+                <div class="avatar"><svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <span>{{ user.username }}</span>
+            </div>
+            <a href="/logout" class="logout"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>退出</a>
+        </div>
+    </nav>
+    <div class="main">
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-icon green"><svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                <div><h3>在线客户端</h3><div class="val" id="onlineCount">{{ online_count }}</div></div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon blue"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+                <div><h3>总客户端数</h3><div class="val">{{ clients|length }}</div></div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon purple"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                <div><h3>分组数量</h3><div class="val">{{ groups|length }}</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head">
+                <h2><svg class="icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>在线客户端</h2>
+                <button class="btn btn-primary" onclick="refreshClients()"><svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>刷新</button>
+            </div>
+            <div class="card-body">
+                <div class="batch" id="batchBar">
+                    <span>已选择 <strong id="selectedCount">0</strong> 个客户端</span>
+                    <button class="btn btn-sm" onclick="confirmBatchShutdown()"><svg class="icon" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>批量关机</button>
+                    <button class="btn btn-sm" onclick="confirmBatchRestart()"><svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>批量重启</button>
+                    <button class="btn btn-sm" onclick="clearSelection()"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>取消</button>
+                </div>
+                <div class="grid" id="clientGrid">
+                    {% if online_clients %}
+                        {% for client in online_clients %}
+                        <div class="client" data-id="{{ client.client_id }}">
+                            <div class="client-cb"><input type="checkbox" onchange="updateSelection()"></div>
+                            <div class="client-top">
+                                <span class="client-name">{{ client.hostname }}</span>
+                                <span class="status on">在线</span>
+                            </div>
+                            <div class="client-info">
+                                <div class="info-row"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>{{ client.client_id[:16] }}...</span></div>
+                                <div class="info-row"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>{{ client.ip_address }}</span></div>
+                                <div class="info-row"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>{{ client.os_info }}</span></div>
+                            </div>
+                            <div class="client-btns">
+                                <button class="btn btn-danger btn-sm" onclick="confirmShutdown('{{ client.client_id }}')"><svg class="icon" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>关机</button>
+                                <button class="btn btn-warning btn-sm" onclick="confirmRestart('{{ client.client_id }}')"><svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>重启</button>
+                                <button class="btn btn-primary btn-sm" onclick="showScheduleModal('{{ client.client_id }}')"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>定时</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty">
+                            <div class="empty-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+                            <p>暂无在线客户端</p>
+                            <p class="hint">请确保客户端程序已启动并连接到服务器</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head">
+                <h2><svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>分组管理</h2>
+                <button class="btn btn-primary btn-sm" onclick="showGroupModal()"><svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新建分组</button>
+            </div>
+            <div class="card-body">
+                <div class="tags">
+                    {% for group in groups %}
+                    <div class="tag">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                        <span>{{ group.name }}</span>
+                        {% if group.name != '默认分组' %}
+                        <button class="del" onclick="confirmDeleteGroup({{ group.id }})"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 确认弹窗 -->
+    <div class="modal-bg" id="confirmModal">
+        <div class="modal">
+            <div class="modal-head">
+                <div class="modal-icon" id="confirmIcon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+                <h3 id="confirmTitle">确认操作</h3>
+            </div>
+            <div class="modal-body" id="confirmBody">确定要执行此操作吗？</div>
+            <div class="modal-btns">
+                <button class="btn btn-ghost" onclick="hideConfirmModal()">取消</button>
+                <button class="btn" id="confirmBtn" onclick="executeConfirm()">确认</button>
+            </div>
+        </div>
+    </div>
+    <!-- 定时关机弹窗 -->
+    <div class="modal-bg" id="scheduleModal">
+        <div class="modal">
+            <div class="modal-head">
+                <div class="modal-icon primary"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                <h3>定时关机</h3>
+            </div>
+            <div class="form-group">
+                <label>延迟时间（分钟）</label>
+                <input type="number" id="scheduleMinutes" value="10" min="1" max="1440">
+            </div>
+            <div class="modal-btns">
+                <button class="btn btn-ghost" onclick="hideScheduleModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmSchedule()">确认</button>
+            </div>
+        </div>
+    </div>
+    <!-- 新建分组弹窗 -->
+    <div class="modal-bg" id="groupModal">
+        <div class="modal">
+            <div class="modal-head">
+                <div class="modal-icon primary"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                <h3>新建分组</h3>
+            </div>
+            <div class="form-group">
+                <label>分组名称</label>
+                <input type="text" id="groupName" placeholder="请输入分组名称">
+            </div>
+            <div class="form-group">
+                <label>描述（可选）</label>
+                <input type="text" id="groupDesc" placeholder="请输入描述">
+            </div>
+            <div class="modal-btns">
+                <button class="btn btn-ghost" onclick="hideGroupModal()">取消</button>
+                <button class="btn btn-primary" onclick="createGroup()">创建</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentClientId = null;
+        let confirmCallback = null;
+        
+        // Toast提示
+        function showToast(msg, type = 'info') {
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            const icons = { success: '<svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>', error: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>', info: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' };
+            t.innerHTML = (icons[type] || icons.info) + msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+        
+        // 确认弹窗
+        function showConfirm(title, body, type, callback) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmBody').textContent = body;
+            const icon = document.getElementById('confirmIcon');
+            const btn = document.getElementById('confirmBtn');
+            icon.className = 'modal-icon ' + type;
+            btn.className = 'btn btn-' + type;
+            confirmCallback = callback;
+            document.getElementById('confirmModal').classList.add('show');
+        }
+        function hideConfirmModal() { document.getElementById('confirmModal').classList.remove('show'); confirmCallback = null; }
+        function executeConfirm() { if (confirmCallback) confirmCallback(); hideConfirmModal(); }
+        
+        // 关机确认
+        function confirmShutdown(id) {
+            showConfirm('确认关机', '确定要关闭该客户端吗？此操作将立即执行。', 'danger', () => shutdown(id));
+        }
+        async function shutdown(id) {
+            try { const r = await fetch(`/api/clients/${id}/shutdown`, { method: 'POST' }); const d = await r.json(); showToast(d.message, d.success ? 'success' : 'error'); } catch (e) { showToast('操作失败', 'error'); }
+        }
+        
+        // 重启确认
+        function confirmRestart(id) {
+            showConfirm('确认重启', '确定要重启该客户端吗？此操作将立即执行。', 'warning', () => restart(id));
+        }
+        async function restart(id) {
+            try { const r = await fetch(`/api/clients/${id}/restart`, { method: 'POST' }); const d = await r.json(); showToast(d.message, d.success ? 'success' : 'error'); } catch (e) { showToast('操作失败', 'error'); }
+        }
+        
+        // 定时关机
+        function showScheduleModal(id) { currentClientId = id; document.getElementById('scheduleModal').classList.add('show'); }
+        function hideScheduleModal() { document.getElementById('scheduleModal').classList.remove('show'); currentClientId = null; }
+        async function confirmSchedule() {
+            const m = document.getElementById('scheduleMinutes').value;
+            try { const r = await fetch(`/api/clients/${currentClientId}/schedule?minutes=${m}`, { method: 'POST' }); const d = await r.json(); showToast(d.message, d.success ? 'success' : 'error'); hideScheduleModal(); } catch (e) { showToast('操作失败', 'error'); }
+        }
+        
+        // 分组管理
+        function showGroupModal() { document.getElementById('groupModal').classList.add('show'); }
+        function hideGroupModal() { document.getElementById('groupModal').classList.remove('show'); }
+        async function createGroup() {
+            const n = document.getElementById('groupName').value, desc = document.getElementById('groupDesc').value;
+            if (!n) { showToast('请输入分组名称', 'error'); return; }
+            try { const r = await fetch('/api/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, description: desc }) }); const d = await r.json(); if (d.success) { showToast('分组创建成功', 'success'); location.reload(); } } catch (e) { showToast('创建失败', 'error'); }
+        }
+        function confirmDeleteGroup(id) {
+            showConfirm('删除分组', '确定要删除该分组吗？此操作不可恢复。', 'danger', () => deleteGroup(id));
+        }
+        async function deleteGroup(id) {
+            try { await fetch(`/api/groups/${id}`, { method: 'DELETE' }); showToast('分组已删除', 'success'); location.reload(); } catch (e) { showToast('删除失败', 'error'); }
+        }
+        
+        // 批量操作
+        function updateSelection() {
+            const cbs = document.querySelectorAll('.client input[type="checkbox"]');
+            const sel = Array.from(cbs).filter(c => c.checked);
+            document.getElementById('selectedCount').textContent = sel.length;
+            document.getElementById('batchBar').classList.toggle('show', sel.length > 0);
+            cbs.forEach(c => c.closest('.client').classList.toggle('selected', c.checked));
+        }
+        function clearSelection() { document.querySelectorAll('.client input[type="checkbox"]').forEach(c => c.checked = false); updateSelection(); }
+        function getSelectedIds() { return Array.from(document.querySelectorAll('.client input[type="checkbox"]:checked')).map(c => c.closest('.client').dataset.id); }
+        function confirmBatchShutdown() {
+            const ids = getSelectedIds();
+            showConfirm('批量关机', `确定要关闭选中的 ${ids.length} 个客户端吗？`, 'danger', batchShutdown);
+        }
+        async function batchShutdown() { const ids = getSelectedIds(); try { await fetch('/api/batch/shutdown', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_ids: ids }) }); showToast('批量关机命令已发送', 'success'); clearSelection(); } catch (e) { showToast('操作失败', 'error'); } }
+        function confirmBatchRestart() {
+            const ids = getSelectedIds();
+            showConfirm('批量重启', `确定要重启选中的 ${ids.length} 个客户端吗？`, 'warning', batchRestart);
+        }
+        async function batchRestart() { const ids = getSelectedIds(); try { await fetch('/api/batch/restart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_ids: ids }) }); showToast('批量重启命令已发送', 'success'); clearSelection(); } catch (e) { showToast('操作失败', 'error'); } }
+        
+        function refreshClients() { location.reload(); }
+        document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }));
+        setInterval(refreshClients, 30000);
+    </script>
+</body>
+</html>

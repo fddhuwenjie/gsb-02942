@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - SECRET_KEY=remote-shutdown-secret-key-2942
+      - DATABASE_URL=sqlite:///data/app.db
+    restart: unless-stopped
